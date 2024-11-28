@@ -393,7 +393,7 @@ void BaconBox::createRenderItems()
 	grid.vertexBufferStartIndex = combinedVertices.size();
 	grid.indexBufferStartIndex = combinedIndices.size();
 	grid.objectCBIndex = 1;
-	grid.srvHeapIndex = 0;
+	grid.srvHeapIndex = 1;
 	combinedVertices.insert(combinedVertices.end(), grid.mesh.vertices.begin(), grid.mesh.vertices.end());
 	for (auto index : grid.mesh.indices)
 	{
@@ -488,27 +488,9 @@ void BaconBox::loadTextures()
 		m_Device->CreateShaderResourceView(tex.second.TextureResource.Get(), &srvDesc, srvHandle);
 	}
 
-	// Use DDSTextureLoad to upload the texture to the GPU
-	ThrowIfFailed(DirectX::CreateDDSTextureFromFile(m_Device.Get(), resourceUpload, crateTex.filename.c_str(),
-		crateTex.TextureResource.GetAddressOf()));
-
 	// Upload and wait to complete
 	std::future<void> upload = resourceUpload.End(m_CommandQueue.GetCommandQueue());
 	upload.wait();
-
-	// Create SRV for the texture
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Format = crateTex.TextureResource->GetDesc().Format;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = crateTex.TextureResource->GetDesc().MipLevels;
-	srvDesc.Texture2D.MostDetailedMip = 0;
-	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-
-	// Init the descriptor heap
-	m_SRVDescriptorHeap.CreateAsCBVSRVUAVHeap(m_Device, 1);
-
-	m_Device->CreateShaderResourceView(crateTex.TextureResource.Get(), &srvDesc, m_SRVDescriptorHeap.GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 }
 
 void BaconBox::SetLights()
